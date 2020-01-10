@@ -35,6 +35,8 @@ GIF_DIR = '/home/peter/Cloud_Dynamics/Python/gifs'
 test_fname = DAY_DIRS[0] + '/' + os.listdir(DAY_DIRS[0])[0]
 clearsky_dict = p.load(open('./pickle_dumps/clearsky_dict.p','rb'))
 
+## APPEARS TO ANIMATE SOME SCATTERPLOTS OF VARIOUS STATISTICS OVER TIME
+
 def normalize(x):
     return(x/np.max(np.abs(x)))
 
