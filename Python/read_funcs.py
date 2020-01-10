@@ -33,6 +33,19 @@ DAY_DIRS = [ os.path.join(m,d)+'/' for m in MONTH_DIRS for d in os.listdir(m) ]
 GIF_DIR = '/home/peter/Cloud_Dynamics/Python/gifs'
 
 
+############################
+# Functions to read in the TSI images located in DATA_DIR
+############################
+# Function names follow format XX_read where XX indicates the returned image type (eg. RGB values, grayscale, etc). Image values are generally scaled to range [0,1]
+# Arguments:
+#   `fname` filename of image, relative to DATA_DIR (so to read the image taken by camera 12 on April 15th, 2019 at 11:30 am you would input fname /11/2019/04/15/113000.jpg
+#   `progbar` defaults to None in all functions. If a progress bar is provided it will increment its value by 1
+#
+# Author: Peter Shaffery
+# Email: pshaff2@gmail.com
+# License: None
+###########################
+
 # reads image specificed by `fname` into RGB data volume
 def rgb_read(fname, progbar=None):
     if progbar:
@@ -41,6 +54,7 @@ def rgb_read(fname, progbar=None):
         pass
     return(cv2.imread(fname).astype(float)[...,[2,1,0]]/255.)
 
+# returns grayscale image
 def grayscale_read(fname, progbar=None):
     if progbar:
         progbar.update(progbar.value+1)
@@ -49,11 +63,13 @@ def grayscale_read(fname, progbar=None):
     return(cv2.imread(fname,0).astype(float)/255.)
 
 
+# the CV2 package calculates grayscale differently from the matplotlib library (as well as from MATLAB)
 def grayscale_read_matlab(fname):
     im = hsv_read(fname)
     im[:,:,[0,1]] = 0.
     return(col.hsv_to_rgb(im)*255)
 
+# reads grayscale or RGB image and resizes to provided size tuple
 def grayscale_read_resize(fname, size, progbar=None):
     if progbar:
         progbar.update(progbar.value+1)
@@ -69,6 +85,7 @@ def rgb_read_resize(fname, size, progbar=None):
         pass
     return(cv2.resize(cv2.imread(fname),size).astype(float)[:,:,[2,1,0]]/255.)
 
+# returns HSV image
 def hsv_read(fname, progbar=None):
     if progbar:
         progbar.update(progbar.value+1)
@@ -86,7 +103,7 @@ def hsv_read_resize(fname, size, progbar=None):
     return(cv2.resize(hsv_read(fname),size))
 
 
-# creates a 2D circular mask for a square image of size `h`x`w` which sets all values outside the circle radius to 0. Radis determined by `crop_factor`*h
+# creates a 2D circular mask for a square image of size `h`x`w` which sets all values outside the circle radius to 0. Radius determined by `crop_factor`*h
 def crop_mask(h,w,crop_factor=.98):
     x1 = int( w-(1-crop_factor)*w/2 )
     y1 = int( h-(1-crop_factor)*h/2 ) 
