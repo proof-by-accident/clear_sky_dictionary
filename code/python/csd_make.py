@@ -3,13 +3,14 @@ from plot_funcs import *
 
 ############################
 # Script to read all TSIs in DATA_DIR and construct a clearsky dictionary (CSD)
+# Core algorithm described at overleaf.com/1577517535shnfkqjdbrcm
 ############################
 # Author: Peter Shaffery
 # Email: pshaff2@gmail.com
 # License: None
 ###########################
 
-# Calculates relevant statistics for all images taken in a given day of the TSI data. Returns a Pandas dataframe (df) where each row corresponds to one TSI
+# `day2stats` calculates several statistics for all images taken in a given day of the TSI data. Returns a Pandas dataframe (df) where each row corresponds to one TSI's stats
 # _Arguments_
 # day_dir: the directory corresponding to the day of images for which to compute stats
 # mask: the zero mask used to crop image
@@ -42,8 +43,9 @@ def day2stats(day_dir, mask, progbar=None):
 
     return(stats)
 
-
+# when csd_make.py is run (either from the python REPL or from the command line it will create a CSD (in the form of a python `dictionary` object and save it to a pickle file
 if __name__=='__main__':
+    # Compiling the CSD takes some time, so the script displays progress using an in-line progress bar
     # Max lengths of progress bar
     prog_len = len([f for dd in DAY_DIRS for f in os.listdir(dd)]) + len(DAY_DIRS)
 
@@ -51,18 +53,18 @@ if __name__=='__main__':
     h,w = (1536,1536)
     mask = crop_mask(h,w)
 
-    # for each day in DAY_DIRS compute the statistics used to select CSD
+    # for each day in DAY_DIRS compute image statistics used to select CSD
     with progressbar.ProgressBar(max_value=prog_len) as progbar:
         full_stats = []
         for dd in DAY_DIRS:
             day_stats = day2stats(dd,mask,progbar=progbar)
             full_stats.append(day_stats)
 
-    # save all statistics
+    # for backup (among other things) save the CSD statistics before computing CSD
     with open(os.path.join(PICKLE_DIR,'csd_stats_save.p'),'wb') as f:
         p.dump(full_stats,f)
 
-    # combine list of dfs into one df
+    # combine list of day-level dfs into one df
     full_stats = pd.concat(full_stats).reset_index()
 
     # compute, for each hour of the TSI data, the minimum clearsky_index (CSI) to find CSD
