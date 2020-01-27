@@ -1,3 +1,4 @@
+import sys
 import os
 import itertools as it
 
@@ -9,6 +10,7 @@ import pandas as pd
 import scipy as sp
 from scipy import ndimage as ndi
 import scipy.signal as ss
+import scipy.io
 
 import cv2
 from PIL import Image, ImageDraw

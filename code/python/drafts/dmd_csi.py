@@ -1,37 +1,6 @@
-import os
-import itertools as it
-
-import numpy as np
-import numpy.linalg as npla
-
-import pandas as pd
-
-import scipy as sp
-from scipy import ndimage as ndi
-import scipy.signal as ss
-
-import cv2
-from PIL import Image, ImageDraw
-import matplotlib.pyplot as plt
-import matplotlib.image as image
-import matplotlib.animation as ani
-import matplotlib.colors as col
-from mpl_toolkits.mplot3d import Axes3D
-
-import time as t
-import pickle as p
-import progressbar
-
-from datetime import datetime as dt
-from datetime import timezone as tz
-from datetime import timedelta as td
-import pytz
-
-import gc
-
-from mpl_toolkits.mplot3d import Axes3D
-
-import pvlib as pv
+from dmd import *
+from read_funcs import *
+from plot_funcs import *
 
 def scale(x):
     return((x-np.mean(x))/np.sqrt(np.var(x)))
@@ -140,32 +109,6 @@ def mode_crop(img, thresh=.5, step=5):
 
     return(not_flat*img_crop)
 
-
-def solpix_loc(fname):
-    latlong = (39.743057,-105.178950)
-    solpos = pv.solarposition.spa_python(fname_to_time2(fname), latlong[0], latlong[1])
-    zen,azi = (float(solpos.apparent_zenith), float(solpos.azimuth))
-
-    h,w = (1536,1536)
-
-    deg2rad = lambda x: (x/360.)*2*np.pi
-
-    L = int((h/2.)*(zen/90.))
-    i = int( (h/2.) - L*np.cos(deg2rad(azi)) )
-    j = int( (w/2.) - L*np.sin(deg2rad(azi)) )
-
-    return(i,j)
-
-
-def solpix_crop(img,fname,w=200,h=200):
-    solpos = solpix_loc(fname)
-    min_i = max(solpos[0]-h,0)
-    max_i = min(solpos[0]+h,1536)
-    min_j= max(solpos[1]-w,0)
-    max_j = min(solpos[1]+w,1536)
-    return(img[min_i:max_i,min_j:max_j])
-
-
 def image_stats(im_list,fns):
     mean_rbr = []
     sd_rbr = []
@@ -196,20 +139,49 @@ def image_stats(im_list,fns):
     return(im_stats)
 
 if __name__=='__main__':
-    #exec(open('sun_position.py').read())
-    from sun_position import *
-    IMAGE_DIR = './example_images/some_cloud/'
-    DATA_DIR = os.path.abspath('/home/peter/Cloud_Dynamics/Data/clearsky_index')
-    DAY_DIR ='/home/peter/Cloud_Dynamics/Data/TSI_images/jpegs/11/2019/04/15'
-    PICKLE_DIR = '/home/peter/Cloud_Dynamics/Python/pickle_dumps'
+    TEST_IMAGE_DIR = './example_images/some_cloud/'
+    CSI_DATA_DIR = os.path.abspath('/home/peter/Cloud_Dynamics/Data/clearsky_index')
+    TEST_DAY_DIR ='/home/peter/Cloud_Dynamics/Data/TSI_images/jpegs/11/2019/04/15'
+
+
+    # read in DMD test data
+    im_fnames = [TEST_IMAGE_DIR+_ for _ in os.listdir(TEST_IMAGE_DIR)]
+    nx = ny = 1536
+    n = nx*ny
+    Xraw = np.array([grayscale_read_matlab(f)[:,:,0].flatten('F') for f in im_fnames]).T
+    Xraw -= Xraw.mean(0)
+
+    nfiles = len(im_fnames)
+
+    L = 4
+    r = 10
+    dt = 30
+    T = nfiles*dt
+    print('running mrDMD...')
+    mrdmd = mrDMD(Xraw,dt,r,2,L)
+    print('...done')
+
+    # unpack DMD modes
+    prev_level = [mrdmd]
+    for l in range(L-2):
+        curr_level = []
+        for ch in prev_level:
+            if len(ch['children'])>0:
+                curr_level += ch['children']
+            else:
+                break
+        prev_level = curr_level
+
+    sun_modes = [np.abs(ch['Phi'][:n,0].reshape((nx,ny),order='F')) for ch in curr_level]
+    cloud_modes = [np.abs(ch['Phi'][:n,1:].reshape((nx,ny),order='F')) for ch in curr_level]
+    modes = [np.abs(_['Phi']) for _ in curr_level]
 
     # read in true CSI values
     try:
-        #assert False
-        csi = pd.read_csv(DATA_DIR+'/csi.csv')
+        csi = pd.read_csv(CSI_DATA_DIR+'/csi.csv')
 
     except:
-        comps = pd.read_csv(DATA_DIR+'/csi_comps.csv')
+        comps = pd.read_csv(CSI_DATA_DIR+'/csi_comps.csv')
         comps.columns = ['date','mst','ghi','ghi1','ghi2','getr','dni','detr']
         csi = pd.DataFrame({'gcsi': comps.ghi/comps.getr, 'dcsi': comps.dni/comps.detr})
         tlist = [0]*csi.shape[0]
@@ -220,13 +192,13 @@ if __name__=='__main__':
             tlist[i] = tstamp.replace(tzinfo=pytz.timezone('US/Mountain'))
 
         csi.insert(1,'time',tlist)
-        csi.to_csv(DATA_DIR+'/csi.csv', index=False)
+        csi.to_csv(CSI_DATA_DIR+'/csi.csv', index=False)
 
     # read and process test images
     test_fnames = []
-    for f in os.listdir(IMAGE_DIR):
+    for f in os.listdir(TEST_IMAGE_DIR):
         f = f.split('_')[0][-6:]
-        test_fnames.append(DAY_DIR+'/'+f+'.jpg')
+        test_fnames.append(TEST_DAY_DIR+'/'+f+'.jpg')
 
     cyc = np.floor(len(test_fnames)/len(sun_modes))
 
