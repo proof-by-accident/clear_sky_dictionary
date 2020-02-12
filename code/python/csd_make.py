@@ -1,5 +1,6 @@
 from read_funcs import *
 from plot_funcs import *
+from sun_position import *
 
 ############################
 # Script to read all TSIs in DATA_DIR and construct a clearsky dictionary (CSD)
@@ -22,7 +23,7 @@ def day2stats(day_dir, mask, progbar=None):
     stats = [[None]*6]*len(image_files)
     for i in range(len(image_files)):
         f = image_files[i]
-        hr = fname_to_datetime(f).hour
+        hr = fname_to_time(f).hour
 
         img = mask*rbr_read(f,progbar)
 
