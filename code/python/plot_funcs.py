@@ -25,16 +25,6 @@ import gc
 
 from read_funcs import *
 
-DATA_DIR = os.path.abspath('/home/peter/Cloud_Dynamics/Data/TSI_images/jpegs')
-CAM_DIRS = [os.path.join(DATA_DIR,'11'), os.path.join(DATA_DIR,'12') ]
-YEAR_DIRS = [ os.path.join(cd,y) for cd in CAM_DIRS for y in os.listdir(cd) ]
-MONTH_DIRS = [ os.path.join(y,m) for y in YEAR_DIRS for m in os.listdir(y) ]
-DAY_DIRS = [ os.path.join(m,d)+'/' for m in MONTH_DIRS for d in os.listdir(m) ]
-GIF_DIR = '/home/peter/Cloud_Dynamics/Python/gifs'
-
-test_fname = DAY_DIRS[0] + '/' + os.listdir(DAY_DIRS[0])[0]
-clearsky_dict = p.load(open('./pickle_dumps/clearsky_dict.p','rb'))
-
 def normalize(x):
     return(x/np.max(np.abs(x)))
 

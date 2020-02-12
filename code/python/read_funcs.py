@@ -27,12 +27,15 @@ import progressbar
 import gc
 
 
-DATA_DIR = os.path.abspath('/home/peter/Cloud_Dynamics/Data/TSI_images/jpegs')
+DATA_DIR = os.path.abspath('/home/peter/Desktop/NREL/cloud_dynamics/data/TSI_images/jpegs')
+CODE_DIR = os.path.join(DATA_DIR,'../../../code')
+PYTHON_DIR = os.path.join(CODE_DIR,'python')
 CAM_DIRS = [os.path.join(DATA_DIR,'11'), os.path.join(DATA_DIR,'12') ]
 YEAR_DIRS = [ os.path.join(cd,y) for cd in CAM_DIRS for y in os.listdir(cd) ]
 MONTH_DIRS = [ os.path.join(y,m) for y in YEAR_DIRS for m in os.listdir(y) ]
 DAY_DIRS = [ os.path.join(m,d)+'/' for m in MONTH_DIRS for d in os.listdir(m) ]
-GIF_DIR = '/home/peter/Cloud_Dynamics/Python/gifs'
+GIF_DIR = os.path.join(PYTHON_DIR,'gifs')
+PICKLE_DIR = os.path.join(PYTHON_DIR,'pickles')
 
 
 ############################
