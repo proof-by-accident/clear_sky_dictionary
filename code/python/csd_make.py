@@ -17,23 +17,30 @@ from sun_position import *
 # mask: the zero mask used to crop image
 # progbar: defaults to `None`, otherwise increments the provided progress bar by one
 def day2stats(day_dir, mask, progbar=None):
+    
+    # get a list of filenames corresponding to TSIs in day `day_dir`
     image_files = [os.path.join(day_dir,f) for f in os.listdir(day_dir)]
 
+    # preallocating variable names
     img = None
     stats = [[None]*6]*len(image_files)
+
     for i in range(len(image_files)):
         f = image_files[i]
-        hr = fname_to_time(f).hour
+        hr = fname_to_time(f).hour #fname_to_time is found in `sun_position.py`
 
-        img = mask*rbr_read(f,progbar)
+        img = mask*rbr_read(f,progbar) #this sets all image content outside of the fisheye lens to 0
 
+        # compile row of day-level image statistics
         stats[i] = [f,hr,np.mean(img),np.median(img),np.max(img),np.std(img)]
 
 
+    # convert list of rows to Pandas DataFrame
     stats = pd.DataFrame(stats)
     stats.columns = ['fname','hour','mean','median','max','sd']
     stats['clearsky_index'] = stats['mean']*stats['sd']
 
+    # save DataFrame to a serialized format (pickle)
     with open(os.path.join(PICKLE_DIR,day_dir.split('/')[-4]+'_'+day_dir.split('/')[-1].split('.')[0]+'.p'),'wb') as f:
         p.dump(stats,f)
 
