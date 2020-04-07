@@ -27,7 +27,7 @@ import progressbar
 import gc
 
 
-DATA_DIR = os.path.abspath('/home/peter/Desktop/NREL/cloud_dynamics/data/TSI_images/jpegs')
+DATA_DIR = os.path.abspath('/home/peter/Desktop/NREL/clear_sky_dictionary/data/TSI_images/jpegs')
 CODE_DIR = os.path.join(DATA_DIR,'../../../code')
 PYTHON_DIR = os.path.join(CODE_DIR,'python')
 CAM_DIRS = [os.path.join(DATA_DIR,'11'), os.path.join(DATA_DIR,'12') ]
