@@ -17,7 +17,6 @@ from sun_position import *
 # mask: the zero mask used to crop image
 # progbar: defaults to `None`, otherwise increments the provided progress bar by one
 def day2stats(day_dir, mask, progbar=None):
-    
     # get a list of filenames corresponding to TSIs in day `day_dir`
     image_files = [os.path.join(day_dir,f) for f in os.listdir(day_dir)]
 
@@ -31,14 +30,19 @@ def day2stats(day_dir, mask, progbar=None):
 
         img = mask*rbr_read(f,progbar) #this sets all image content outside of the fisheye lens to 0
 
-        # compile row of day-level image statistics
+        # compile row of day-level RBR image statistics
         stats[i] = [f,hr,np.mean(img),np.median(img),np.max(img),np.std(img)]
 
+        # repeat previous with RBD
+        img = mask*rbd_read(f,progbar) #this sets all image content outside of the fisheye lens to 0
+
+        # compile row of day-level RBD image statistics
+        stats[i] += [np.mean(img),np.median(img),np.max(img),np.std(img)]
 
     # convert list of rows to Pandas DataFrame
     stats = pd.DataFrame(stats)
-    stats.columns = ['fname','hour','mean','median','max','sd']
-    stats['clearsky_index'] = stats['mean']*stats['sd']
+    stats.columns = ['fname','hour','rbr_mean','rbr_median','rbr_max','rbr_sd','rbd_mean','rbd_median','rbd_max','rbd_sd']
+    stats['clearsky_pseudoindex'] = stats['rbr_mean']*stats['rbr_sd']
 
     # save DataFrame to a serialized format (pickle)
     with open(os.path.join(PICKLE_DIR,day_dir.split('/')[-4]+'_'+day_dir.split('/')[-1].split('.')[0]+'.p'),'wb') as f:
@@ -55,18 +59,18 @@ def day2stats(day_dir, mask, progbar=None):
 if __name__=='__main__':
     # Compiling the CSD takes some time, so the script displays progress using an in-line progress bar
     # Max lengths of progress bar
-    prog_len = len([f for dd in DAY_DIRS for f in os.listdir(dd)]) + len(DAY_DIRS)
+    prog_len = len([f for dd in DAY_DIRS for f in os.listdir(dd)]) + len(DAY_DIRS) + 1
 
     # call crop mask
     h,w = (1536,1536)
     mask = crop_mask(h,w)
 
     # for each day in DAY_DIRS compute image statistics used to select CSD
-    with progressbar.ProgressBar(max_value=prog_len) as progbar:
-        full_stats = []
-        for dd in DAY_DIRS:
-            day_stats = day2stats(dd,mask,progbar=progbar)
-            full_stats.append(day_stats)
+    #with progressbar.ProgressBar(max_value=prog_len) as progbar:
+    full_stats = []
+    for dd in DAY_DIRS:
+        day_stats = day2stats(dd,mask,progbar=None)
+        full_stats.append(day_stats)
 
     # for backup (among other things) save the CSD statistics before computing CSD
     with open(os.path.join(PICKLE_DIR,'csd_stats_save.p'),'wb') as f:
@@ -76,7 +80,7 @@ if __name__=='__main__':
     full_stats = pd.concat(full_stats).reset_index()
 
     # compute, for each hour of the TSI data, the minimum clearsky_index (CSI) to find CSD
-    clearsky_ids = full_stats.groupby('hour').idxmin()['clearsky_index']
+    clearsky_ids = full_stats.groupby('hour').idxmin()['clearsky_pseudoindex']
     clearsky_dict = {k: full_stats['fname'][int(clearsky_ids[k])] for k in clearsky_ids.keys()}
 
     # save CSD in a pickle file

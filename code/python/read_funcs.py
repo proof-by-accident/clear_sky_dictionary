@@ -139,7 +139,7 @@ def mask_rgb_read(fname, progbar=None):
 # converts RGB data volume to 2D Red-Blue Difference (RBD) image
 def rgb_to_rbd(rgb, progbar=None):
     ret = np.ones(rgb.shape[:2])
-    ret = (rgb[:,:,2]-rgb[:,:,0])/(ret+rgb[:,:,2]+rgb[:,:,0])
+    ret = (rgb[:,:,0]-rgb[:,:,2])/(ret+rgb[:,:,2]+rgb[:,:,0])
     if progbar:
         progbar.update(progbar.value+1)
     else:
